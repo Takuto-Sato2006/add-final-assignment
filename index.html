@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブロックス</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>ブロックス</h1>
+  <div id="turnInfo"></div>
+</header>
+<main>
+  <div id="boardWrap">
+    <div id="board"></div>
+    <div id="legend">
+      <span><i style="background:#e74c3c"></i>赤:左上</span>
+      <span><i style="background:#3498db"></i>青:右上</span>
+      <span><i style="background:#2ecc71"></i>緑:右下</span>
+      <span><i style="background:#f1c40f"></i>黄:左下</span>
+    </div>
+  </div>
+  <aside id="side">
+    <div id="status"></div>
+    <section id="handPanel">
+      <h2 id="handTitle"></h2>
+      <div id="hand"></div>
+      <div id="controls">
+        <button id="btnRotate">回転 (R)</button>
+        <button id="btnFlip">反転 (F)</button>
+        <button id="btnPass">パス</button>
+      </div>
+      <p id="hint"></p>
+    </section>
+  </aside>
+</main>
+<div id="overlay" class="hidden">
+  <div id="result"></div>
+  <button id="btnRestart">もう一度プレイ</button>
+</div>
+<script src="game.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

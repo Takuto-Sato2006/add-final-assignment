@@ -1,0 +1,212 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  font-family: "Hiragino Kaku Gothic ProN", "Meiryo", "Yu Gothic", sans-serif;
+  background: #161a1f;
+  color: #e8eaed;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  letter-spacing: 6px;
+}
+
+#turnInfo {
+  color: #9aa0a6;
+  font-size: 14px;
+}
+
+main {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(20, 24px);
+  grid-template-rows: repeat(20, 24px);
+  background: #0d1117;
+  border: 2px solid #3a4048;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cell {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #242a33;
+}
+
+.cell.ghost-ok {
+  background: rgba(46, 204, 113, 0.5);
+}
+
+.cell.ghost-bad {
+  background: rgba(231, 76, 60, 0.45);
+}
+
+#legend {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #9aa0a6;
+  flex-wrap: wrap;
+}
+
+#legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+
+#side {
+  width: 440px;
+  max-width: 100%;
+}
+
+#status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.playerStatus {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #232830;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.playerStatus.current {
+  outline: 2px solid #f1c40f;
+}
+
+.chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+#handPanel {
+  background: #20252d;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+#handTitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+#hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 60px;
+}
+
+.pieceBtn {
+  display: grid;
+  gap: 1px;
+  padding: 3px;
+  background: #2a303a;
+  border: 2px solid #3a4048;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pieceBtn:hover {
+  border-color: #8ab4f8;
+}
+
+.pieceBtn.selected {
+  border-color: #f1c40f;
+  box-shadow: 0 0 8px rgba(241, 196, 15, 0.5);
+}
+
+.pcell {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+#controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+button {
+  background: #2a303a;
+  color: #e8eaed;
+  border: 1px solid #3a4048;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+button:hover {
+  background: #343b46;
+}
+
+#hint {
+  color: #9aa0a6;
+  font-size: 12px;
+  margin: 10px 0 0;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+#overlay.hidden {
+  display: none;
+}
+
+#result {
+  background: #20252d;
+  border-radius: 12px;
+  padding: 24px 40px;
+  margin-bottom: 16px;
+}
+
+#result h2 {
+  margin-top: 0;
+  text-align: center;
+}
+
+#result ol {
+  line-height: 2.1;
+  font-size: 17px;
+  padding-left: 24px;
+}
