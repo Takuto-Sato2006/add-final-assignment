@@ -147,6 +147,26 @@
     return false;
   }
 
+  function listMoves(game, playerIndex) {
+    const out = [];
+    const player = game.players[playerIndex];
+    for (const pieceIndex of player.remaining) {
+      const piece = PIECES[pieceIndex];
+      for (const cells of piece.orientations) {
+        const h = Math.max(...cells.map((x) => x[0])) + 1;
+        const w = Math.max(...cells.map((x) => x[1])) + 1;
+        for (let r = 0; r + h <= BOARD_SIZE; r++) {
+          for (let c = 0; c + w <= BOARD_SIZE; c++) {
+            if (isPlacementValid(game, playerIndex, cells, r, c)) {
+              out.push({ pieceIndex, cells, r, c });
+            }
+          }
+        }
+      }
+    }
+    return out;
+  }
+
   function placePiece(game, playerIndex, pieceIndex, cells, r, c) {
     if (!isPlacementValid(game, playerIndex, cells, r, c)) return false;
     const player = game.players[playerIndex];
@@ -205,6 +225,7 @@
     createGame,
     isPlacementValid,
     hasAnyMove,
+    listMoves,
     placePiece,
     pass,
     advanceTurn,

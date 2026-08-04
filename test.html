@@ -111,6 +111,13 @@ pre { line-height: 1.6; }
     check('全プレイヤーは初期状態で置ける場所がある', B.hasAnyMove(g3, i) === true);
   }
 
+  const moves0 = B.listMoves(g3, 0);
+  check('初期状態の候補手が存在する', moves0.length > 0);
+  check('候補手が自分の角を含む', moves0.some((m) =>
+    m.cells.some(([dr, dc]) => m.r + dr === 0 && m.c + dc === 0)) === true);
+  B.placePiece(g3, 0, moves0[0].pieceIndex, moves0[0].cells, moves0[0].r, moves0[0].c);
+  check('候補手を使って配置できる', g3.board[0][0] === 0 || g3.players[0].remaining.length === 20);
+
   const g4 = B.createGame();
   for (let i = 0; i < 4; i++) B.pass(g4);
   check('4人連続パスでゲーム終了', g4.over === true);
@@ -120,6 +127,31 @@ pre { line-height: 1.6; }
   g5.players[1].remaining = g5.players[1].remaining.filter((i) => i !== 0 && i !== 1);
   const rank = B.calcRanking(g5);
   check('ランキング:残り枚数の少ない方が上位', rank[0].index === 1 && rank[1].index === 0);
+
+  (function () {
+    const g = B.createGame();
+    let guard = 0;
+    while (!g.over && guard < 500) {
+      guard++;
+      const moves = B.listMoves(g, g.currentPlayer);
+      if (moves.length === 0) {
+        B.pass(g);
+      } else {
+        const m = moves[Math.floor(Math.random() * moves.length)];
+        B.placePiece(g, g.currentPlayer, m.pieceIndex, m.cells, m.r, m.c);
+      }
+    }
+    check('CPUフルゲームが終了する', g.over === true);
+    check('CPUフルゲームの順位が4人分決まる', g.winnerRanking !== null && g.winnerRanking.length === 4);
+    let valid = true;
+    for (let r = 0; r < B.BOARD_SIZE; r++) {
+      for (let c = 0; c < B.BOARD_SIZE; c++) {
+        const v = g.board[r][c];
+        if (v !== null && (v < 0 || v > 3)) valid = false;
+      }
+    }
+    check('CPUフルゲームでボードの値が全て有効', valid === true);
+  })();
 
   render();
 })();

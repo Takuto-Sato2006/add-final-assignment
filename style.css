@@ -24,6 +24,25 @@ h1 {
   font-size: 14px;
 }
 
+#settings {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #9aa0a6;
+}
+
+#settings select {
+  background: #2a303a;
+  color: #e8eaed;
+  border: 1px solid #3a4048;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+#settings span {
+  margin-left: 8px;
+  font-size: 11px;
+}
+
 main {
   display: flex;
   gap: 24px;
@@ -143,6 +162,15 @@ main {
 .pieceBtn.selected {
   border-color: #f1c40f;
   box-shadow: 0 0 8px rgba(241, 196, 15, 0.5);
+}
+
+.pieceBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pieceBtn:disabled:hover {
+  border-color: #3a4048;
 }
 
 .pcell {

@@ -2,8 +2,12 @@
   'use strict';
 
   const B = Blokus;
+  const DIAG = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+  const CPU_DELAY = 600;
 
   let game = B.createGame();
+  let humanPlayer = 0;
+  let busy = false;
   let selectedPiece = null;
   let orientation = null;
   let hoverPos = null;
@@ -17,7 +21,12 @@
   const hintEl = document.getElementById('hint');
   const overlayEl = document.getElementById('overlay');
   const resultEl = document.getElementById('result');
+  const humanColorEl = document.getElementById('humanColor');
   const boardEls = [];
+
+  function isHumanTurn() {
+    return !game.over && !busy && game.currentPlayer === humanPlayer;
+  }
 
   function initBoard() {
     for (let r = 0; r < B.BOARD_SIZE; r++) {
@@ -64,6 +73,7 @@
     }
     prevGhost = [];
     if (selectedPiece === null || game.over || hoverPos === null) return;
+    if (game.currentPlayer !== humanPlayer) return;
     const valid = B.isPlacementValid(game, game.currentPlayer, orientation, hoverPos.r, hoverPos.c);
     for (const [dr, dc] of orientation) {
       const r = hoverPos.r + dr;
@@ -85,19 +95,27 @@
       chip.className = 'chip';
       chip.style.background = B.COLORS[i];
       div.appendChild(chip);
-      div.appendChild(document.createTextNode(B.COLOR_NAMES[i] + ' 残り:' + p.remaining.length + '枚'));
+      const label = i === humanPlayer ? 'あなた' : 'CPU';
+      div.appendChild(document.createTextNode(B.COLOR_NAMES[i] + '（' + label + '） 残り:' + p.remaining.length + '枚'));
       statusEl.appendChild(div);
     }
   }
 
   function renderTurn() {
+    const who = game.currentPlayer === humanPlayer
+      ? 'あなた（' + B.COLOR_NAMES[game.currentPlayer] + '）'
+      : B.COLOR_NAMES[game.currentPlayer] + '（CPU）';
+    const note = (busy && game.currentPlayer !== humanPlayer) ? ' - 思考中...' : '';
     turnEl.innerHTML = '現在の手番: <span style="color:' + B.COLORS[game.currentPlayer] + '; font-weight:bold">'
-      + B.COLOR_NAMES[game.currentPlayer] + '</span>';
+      + who + '</span>' + note;
   }
 
   function renderHand() {
     const player = game.players[game.currentPlayer];
-    handTitleEl.textContent = B.COLOR_NAMES[game.currentPlayer] + 'の手番 - 手持ち ' + player.remaining.length + ' 枚';
+    const active = isHumanTurn();
+    handTitleEl.textContent = B.COLOR_NAMES[game.currentPlayer]
+      + (active ? 'の手番' : '（' + (game.currentPlayer === humanPlayer ? 'あなた' : 'CPU') + '）')
+      + ' - 手持ち ' + player.remaining.length + ' 枚';
     handEl.innerHTML = '';
     for (const pi of player.remaining) {
       const piece = B.PIECES[pi];
@@ -107,6 +125,7 @@
       const btn = document.createElement('button');
       btn.className = 'pieceBtn' + (pi === selectedPiece ? ' selected' : '');
       btn.title = piece.name;
+      btn.disabled = !active;
       btn.style.gridTemplateColumns = 'repeat(' + w + ', 14px)';
       btn.style.gridTemplateRows = 'repeat(' + h + ', 14px)';
       for (let rr = 0; rr < h; rr++) {
@@ -122,13 +141,17 @@
       btn.addEventListener('click', () => selectPiece(pi));
       handEl.appendChild(btn);
     }
-    hintEl.textContent = selectedPiece === null
-      ? 'ピースをクリックして選択してください。'
-      : '選択中: ' + B.PIECES[selectedPiece].name + '（R:回転 / F:反転）ボード上の空きマスをクリックで配置。';
+    if (!active) {
+      hintEl.textContent = game.currentPlayer === humanPlayer ? 'CPUのターンです。' : 'CPUが考え中です...';
+    } else {
+      hintEl.textContent = selectedPiece === null
+        ? 'ピースをクリックして選択してください。'
+        : '選択中: ' + B.PIECES[selectedPiece].name + '（R:回転 / F:反転）ボード上の空きマスをクリックで配置。';
+    }
   }
 
   function selectPiece(pi) {
-    if (game.over) return;
+    if (!isHumanTurn()) return;
     if (selectedPiece === pi) {
       selectedPiece = null;
       orientation = null;
@@ -142,21 +165,21 @@
   }
 
   function rotateCurrent() {
-    if (orientation === null) return;
+    if (!isHumanTurn() || orientation === null) return;
     orientation = B.normalizeCells(orientation.map(([r, c]) => [c, -r]));
     renderGhost();
     renderHand();
   }
 
   function flipCurrent() {
-    if (orientation === null) return;
+    if (!isHumanTurn() || orientation === null) return;
     orientation = B.normalizeCells(orientation.map(([r, c]) => [r, -c]));
     renderGhost();
     renderHand();
   }
 
   function onCellClick(r, c) {
-    if (game.over) return;
+    if (!isHumanTurn()) return;
     if (selectedPiece === null) return;
     if (B.isPlacementValid(game, game.currentPlayer, orientation, r, c)) {
       B.placePiece(game, game.currentPlayer, selectedPiece, orientation, r, c);
@@ -165,17 +188,72 @@
       hoverPos = null;
       render();
       checkGameOver();
+      maybeRunCpu();
     }
   }
 
   function doPass() {
-    if (game.over) return;
+    if (!isHumanTurn()) return;
     B.pass(game);
     selectedPiece = null;
     orientation = null;
     hoverPos = null;
     render();
     checkGameOver();
+    maybeRunCpu();
+  }
+
+  function cpuScore(m, board) {
+    let s = 0;
+    for (const [dr, dc] of m.cells) {
+      for (const [er, ec] of DIAG) {
+        const rr = m.r + dr + er;
+        const cc = m.c + dc + ec;
+        if (rr >= 0 && cc >= 0 && rr < B.BOARD_SIZE && cc < B.BOARD_SIZE && board[rr][cc] === null) {
+          s++;
+        }
+      }
+    }
+    return s;
+  }
+
+  function chooseCpuMove(moves) {
+    const maxCells = moves.reduce((mx, x) => Math.max(mx, x.cells.length), 0);
+    const biggest = moves.filter((m) => m.cells.length === maxCells);
+    let best = biggest[0];
+    let bestScore = -1;
+    for (const m of biggest) {
+      const s = cpuScore(m, game.board);
+      if (s > bestScore) {
+        bestScore = s;
+        best = m;
+      }
+    }
+    return best;
+  }
+
+  function maybeRunCpu() {
+    if (game.over) return;
+    if (game.currentPlayer === humanPlayer) return;
+    if (busy) return;
+    busy = true;
+    selectedPiece = null;
+    orientation = null;
+    hoverPos = null;
+    render();
+    setTimeout(() => {
+      const moves = B.listMoves(game, game.currentPlayer);
+      if (moves.length === 0) {
+        B.pass(game);
+      } else {
+        const move = chooseCpuMove(moves);
+        B.placePiece(game, game.currentPlayer, move.pieceIndex, move.cells, move.r, move.c);
+      }
+      busy = false;
+      render();
+      checkGameOver();
+      maybeRunCpu();
+    }, CPU_DELAY);
   }
 
   function checkGameOver() {
@@ -183,8 +261,9 @@
     const list = game.winnerRanking;
     let html = '<h2>ゲーム終了</h2><ol>';
     list.forEach((rank, i) => {
+      const label = rank.index === humanPlayer ? 'あなた' : 'CPU';
       html += '<li style="color:' + B.COLORS[rank.index] + '">'
-        + (i + 1) + '位 ' + B.COLOR_NAMES[rank.index]
+        + (i + 1) + '位 ' + B.COLOR_NAMES[rank.index] + '（' + label + '）'
         + ' 残り:' + rank.remaining + '枚（残りマス:' + rank.cells + '）</li>';
     });
     html += '</ol>';
@@ -193,13 +272,16 @@
   }
 
   function restart() {
+    humanPlayer = parseInt(humanColorEl.value, 10);
     game = B.createGame();
     selectedPiece = null;
     orientation = null;
     hoverPos = null;
     prevGhost = [];
+    busy = false;
     overlayEl.classList.add('hidden');
     render();
+    maybeRunCpu();
   }
 
   document.getElementById('btnRotate').addEventListener('click', rotateCurrent);
@@ -212,5 +294,9 @@
   });
 
   initBoard();
+  const qs = new URLSearchParams(location.search);
+  const qHuman = qs.get('human');
+  if (qHuman !== null) humanPlayer = parseInt(qHuman, 10) || 0;
   render();
+  maybeRunCpu();
 })();
